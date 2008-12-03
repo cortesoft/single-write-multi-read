@@ -1,0 +1,38 @@
+SingleWriteMultiRead
+====================
+
+This plugin is designed to allow an application to use many read slave DBs with a single write DB.
+Active record finder methods are rewritten to use a random slave, and all save methods are rewritten to
+write to the single master.
+
+Using the plugin is simple.  First you must define the slave databases in database.yml.  Any and all definitions that 
+include the word 'slave' in their definition will be used as a read slave in the production environment (For example: read_slave, read_slave_1, slave_db, etc.).  
+The database defined as 'production' will be used as the write master.  To use a slave in another environment, include the name
+of the environment somewhere in the name of the database definition.  For example, to use a read slave in the development
+environment, you could use a name like read_slave_development.
+
+Once you have defined your connections in database.yml, simply add the following line to your model definitions for any ActiveRecord
+model that you want to use the read slave:
+
+single_write_multi_read
+
+After that, all finds will use a random slave for reads and the production database as the write master.
+
+*NOTE* The class of the object returned by any find will include the slave connection name.  For example, say you have
+as class 'Person' implementing single_write_multi_read, with a slave database definition called read_slave_1 definded in database.yml.
+
+p = Person.find(:first) #Returns a person object retrieved from a random slave (in this case read_slave_1)
+
+Calling class on this object returns a class name with the slave module included in the namespace.
+
+p.class 				#Returns the class name including the readslave name
+>> ReadSlave1::Person
+
+
+Calling class on an object returned by this slave will return ReadSlave1::Person as the class.  To get the actual class name, call the
+class method 'real_class' instead.
+
+p.real_class			#Returns the actual class name
+>> Person
+
+Copyright (c) 2008 Daniel Lockhart, released under the MIT license
